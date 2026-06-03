@@ -11,8 +11,6 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0
     restart: unless-stopped
-    # Pre-pull the llama3 model on startup
-    command: sh -c "ollama serve & ollama pull llama3 && tail -f /dev/null"
 
   backend:
     build:
