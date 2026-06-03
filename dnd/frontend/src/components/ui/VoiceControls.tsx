@@ -2,11 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 
 interface VoiceControlsProps {
   onTranscript: (text: string) => void;
-  onSpeak: (text: string) => void;
   currentInput?: string;
 }
 
-export default function VoiceControls({ onTranscript, onSpeak, currentInput }: VoiceControlsProps) {
+export default function VoiceControls({ onTranscript, currentInput }: VoiceControlsProps) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -97,29 +96,6 @@ export default function VoiceControls({ onTranscript, onSpeak, currentInput }: V
       recognitionRef.current.start();
       setIsListening(true);
     }
-  };
-
-  const speak = (text: string) => {
-    if (!window.speechSynthesis) {
-      alert('Speech synthesis is not supported in this browser.');
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voice = voices.find(v => v.name === selectedVoice);
-    if (voice) {
-      utterance.voice = voice;
-    }
-    utterance.volume = volume;
-    utterance.rate = 0.9; // Slightly slower for dramatic effect
-    utterance.pitch = 0.9; // Slightly lower pitch for fantasy feel
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(utterance);
-    onSpeak(text);
   };
 
   const stopSpeaking = () => {

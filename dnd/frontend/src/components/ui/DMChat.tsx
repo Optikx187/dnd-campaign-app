@@ -148,10 +148,6 @@ export default function DMChat() {
     setInput(transcript);
   };
 
-  const handleSpeak = (text: string) => {
-    // Text-to-speech is handled by the VoiceControls component
-    console.log('Speaking:', text);
-  };
 
   const speakMessage = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -270,7 +266,7 @@ export default function DMChat() {
         </div>
       )}
 
-      <VoiceControls onTranscript={handleTranscript} onSpeak={handleSpeak} currentInput={input} />
+      <VoiceControls onTranscript={handleTranscript} currentInput={input} />
       
       {campaign && (
         <div className="bg-purple-600/20 border border-purple-500/30 rounded-lg p-4 mb-4">
