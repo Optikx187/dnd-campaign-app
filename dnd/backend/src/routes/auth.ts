@@ -1,10 +1,10 @@
 import { Router } from 'express';
-// import passport from 'passport';
-// import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+// const passport = require('passport');
+// const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 const router = Router();
 
-// Google OAuth Strategy - Temporarily disabled due to ts-node compilation issues
+// Google OAuth Strategy - Temporarily disabled due to module resolution issues
 // passport.use(
 //   new GoogleStrategy(
 //     {
@@ -12,7 +12,7 @@ const router = Router();
 //       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
 //       callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/api/auth/google/callback',
 //     },
-//     async (accessToken, refreshToken, profile, done) => {
+//     async (accessToken: any, refreshToken: any, profile: any, done: any) => {
 //       try {
 //         // In production, save/find user in database
 //         const user = {
@@ -30,11 +30,11 @@ const router = Router();
 //   )
 // );
 
-// passport.serializeUser((user: any, done) => {
+// passport.serializeUser((user: any, done: any) => {
 //   done(null, user);
 // });
 
-// passport.deserializeUser((user: any, done) => {
+// passport.deserializeUser((user: any, done: any) => {
 //   done(null, user);
 // });
 
@@ -44,7 +44,7 @@ const router = Router();
 // router.get(
 //   '/google/callback',
 //   passport.authenticate('google', { failureRedirect: '/login' }),
-//   (req, res) => {
+//   (req: any, res) => {
 //     // Successful authentication
 //     const user = req.user as any;
 //     res.json({ user, message: 'Google login successful' });

@@ -3,9 +3,10 @@ import { useState, useEffect, useRef } from 'react';
 interface VoiceControlsProps {
   onTranscript: (text: string) => void;
   onSpeak: (text: string) => void;
+  currentInput?: string;
 }
 
-export default function VoiceControls({ onTranscript, onSpeak }: VoiceControlsProps) {
+export default function VoiceControls({ onTranscript, onSpeak, currentInput }: VoiceControlsProps) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -89,6 +90,10 @@ export default function VoiceControls({ onTranscript, onSpeak }: VoiceControlsPr
       recognitionRef.current.stop();
       setIsListening(false);
     } else {
+      // Clear any existing text before starting to listen
+      if (currentInput && currentInput.trim()) {
+        onTranscript(''); // Clear the input field
+      }
       recognitionRef.current.start();
       setIsListening(true);
     }

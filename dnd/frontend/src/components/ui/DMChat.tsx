@@ -29,10 +29,18 @@ export default function DMChat() {
 
   const checkCampaignStatus = async () => {
     try {
+      // First check localStorage for persisted campaign
+      const savedCampaign = localStorage.getItem('dnd-campaign');
+      if (savedCampaign) {
+        setCampaign(JSON.parse(savedCampaign));
+      }
+
+      // Then check backend for current campaign
       const response = await fetch('http://localhost:3000/api/campaign/status');
       const data = await response.json();
       if (data.isActive && data.campaign) {
         setCampaign(data.campaign);
+        localStorage.setItem('dnd-campaign', JSON.stringify(data.campaign));
       }
     } catch (error) {
       console.error('Error checking campaign status:', error);
@@ -40,8 +48,20 @@ export default function DMChat() {
   };
 
   useEffect(() => {
-    checkCampaignStatus();
+    const loadCampaign = async () => {
+      await checkCampaignStatus();
+    };
+    loadCampaign();
   }, []);
+
+  // Save campaign to localStorage whenever it changes
+  useEffect(() => {
+    if (campaign) {
+      localStorage.setItem('dnd-campaign', JSON.stringify(campaign));
+    } else {
+      localStorage.removeItem('dnd-campaign');
+    }
+  }, [campaign]);
 
   const startCampaign = async () => {
     if (!campaignName.trim()) return;
@@ -100,7 +120,7 @@ export default function DMChat() {
       });
 
       const data = await response.json();
-      
+
       if (mode === 'dm' && campaign) {
         // Update campaign state
         if (data.campaign) {
@@ -108,12 +128,14 @@ export default function DMChat() {
         }
         const assistantMessage: Message = { role: 'assistant', content: data.scene };
         setMessages((prev) => [...prev, assistantMessage]);
+        speakMessage(data.scene);
       } else {
-        const assistantMessage: Message = { 
-          role: mode === 'dm' ? 'assistant' : 'rules', 
-          content: mode === 'dm' ? data.response : data.answer 
+        const assistantMessage: Message = {
+          role: mode === 'dm' ? 'assistant' : 'rules',
+          content: mode === 'dm' ? data.response : data.answer
         };
         setMessages((prev) => [...prev, assistantMessage]);
+        speakMessage(mode === 'dm' ? data.response : data.answer);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -129,6 +151,18 @@ export default function DMChat() {
   const handleSpeak = (text: string) => {
     // Text-to-speech is handled by the VoiceControls component
     console.log('Speaking:', text);
+  };
+
+  const speakMessage = (text: string) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
+    if (englishVoices.length > 0) {
+      utterance.voice = englishVoices[0];
+    }
+    utterance.rate = 0.9;
+    utterance.pitch = 0.9;
+    window.speechSynthesis.speak(utterance);
   };
 
   const resetCampaign = async () => {
@@ -171,9 +205,9 @@ export default function DMChat() {
             {!campaign ? (
               <button
                 onClick={() => setShowCampaignModal(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-lg shadow-green-500/50 font-medium"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-lg shadow-green-500/50 font-medium animate-pulse"
               >
-                🎮 Start Campaign
+                🎮 Start New Campaign
               </button>
             ) : (
               <>
@@ -235,8 +269,8 @@ export default function DMChat() {
           </div>
         </div>
       )}
-      
-      <VoiceControls onTranscript={handleTranscript} onSpeak={handleSpeak} />
+
+      <VoiceControls onTranscript={handleTranscript} onSpeak={handleSpeak} currentInput={input} />
       
       {campaign && (
         <div className="bg-purple-600/20 border border-purple-500/30 rounded-lg p-4 mb-4">
