@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// const passport = require('passport');
-// const session = require('express-session');
+// import passport from 'passport';
+// import session from 'express-session';
 import aiRoutes from './routes/ai';
 import rulesRoutes from './routes/rules';
 import authRoutes from './routes/auth';

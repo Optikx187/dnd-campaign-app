@@ -1,6 +1,6 @@
 import { Router } from 'express';
-// const passport = require('passport');
-// const GoogleStrategy = require('passport-google-oauth20').Strategy;
+// import passport from 'passport';
+// import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 
 const router = Router();
 
