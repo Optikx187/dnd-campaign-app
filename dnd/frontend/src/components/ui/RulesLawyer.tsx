@@ -31,18 +31,21 @@ export default function RulesLawyer() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h1 className="text-3xl font-bold mb-6 text-center">D&D 5e Rules Lawyer</h1>
-      <p className="text-gray-600 text-center mb-6">
-        Ask any question about Dungeons & Dragons 5th Edition rules
-      </p>
+    <div className="max-w-6xl mx-auto p-6 bg-slate-800/50 backdrop-blur-sm rounded-lg shadow-lg border border-purple-500/30">
+      <div className="text-center mb-6">
+        <span className="text-4xl mb-2 block">📜</span>
+        <h1 className="text-3xl font-bold text-white">D&D 5e Rules Lawyer</h1>
+        <p className="text-gray-400 text-center mt-2">
+          Ask any question about Dungeons & Dragons 5th Edition rules
+        </p>
+      </div>
 
       <div className="mb-6">
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="Ask a question about D&D 5e rules..."
-          className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+          className="w-full p-4 border border-purple-500/30 rounded-lg bg-slate-700/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[100px]"
           disabled={isLoading}
         />
       </div>
@@ -50,15 +53,15 @@ export default function RulesLawyer() {
       <button
         onClick={askQuestion}
         disabled={isLoading || !question.trim()}
-        className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed mb-6"
+        className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-slate-600 disabled:cursor-not-allowed mb-6 transition-all shadow-lg shadow-purple-500/50 font-medium"
       >
-        {isLoading ? 'Consulting the rules...' : 'Ask Rules Lawyer'}
+        {isLoading ? '📚 Consulting ancient tomes...' : '📜 Ask Rules Lawyer'}
       </button>
 
       {answer && (
-        <div className="bg-gray-50 p-4 rounded-lg border">
-          <h3 className="font-semibold mb-2">Answer:</h3>
-          <p className="whitespace-pre-wrap">{answer}</p>
+        <div className="bg-slate-700/50 p-4 rounded-lg border border-purple-500/30">
+          <h3 className="font-semibold mb-2 text-white">Answer:</h3>
+          <p className="whitespace-pre-wrap text-gray-200">{answer}</p>
         </div>
       )}
     </div>

@@ -1,15 +1,74 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VoiceControls from './VoiceControls';
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'rules';
   content: string;
+}
+
+interface Campaign {
+  id: string;
+  name: string;
+  description: string;
+  currentScene: string;
+  objectives: string[];
+  completedObjectives: string[];
+  isComplete: boolean;
+  bossDefeated: boolean;
 }
 
 export default function DMChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<'dm' | 'rules'>('dm');
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [campaignName, setCampaignName] = useState('');
+  const [campaignDescription, setCampaignDescription] = useState('');
+
+  const checkCampaignStatus = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/campaign/status');
+      const data = await response.json();
+      if (data.isActive && data.campaign) {
+        setCampaign(data.campaign);
+      }
+    } catch (error) {
+      console.error('Error checking campaign status:', error);
+    }
+  };
+
+  useEffect(() => {
+    checkCampaignStatus();
+  }, []);
+
+  const startCampaign = async () => {
+    if (!campaignName.trim()) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:3000/api/campaign/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: campaignName, description: campaignDescription }),
+      });
+
+      const data = await response.json();
+      setCampaign(data);
+      setShowCampaignModal(false);
+      
+      // Add the opening scene as a DM message
+      const dmMessage: Message = { role: 'assistant', content: data.currentScene };
+      setMessages([dmMessage]);
+    } catch (error) {
+      console.error('Error starting campaign:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const sendMessage = async (text?: string) => {
     const messageToSend = text || input;
@@ -21,17 +80,41 @@ export default function DMChat() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/ai/chat', {
+      let endpoint = mode === 'dm' ? '/api/ai/chat' : '/api/rules/ask';
+      let body: any = mode === 'dm' 
+        ? { prompt: messageToSend, model: 'llama3' }
+        : { question: messageToSend };
+
+      // If in campaign mode, use campaign advance instead
+      if (mode === 'dm' && campaign && !campaign.isComplete) {
+        endpoint = '/api/campaign/advance';
+        body = { action: messageToSend };
+      }
+
+      const response = await fetch(`http://localhost:3000${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt: messageToSend, model: 'llama3' }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
-      const assistantMessage: Message = { role: 'assistant', content: data.response };
-      setMessages((prev) => [...prev, assistantMessage]);
+      
+      if (mode === 'dm' && campaign) {
+        // Update campaign state
+        if (data.campaign) {
+          setCampaign(data.campaign);
+        }
+        const assistantMessage: Message = { role: 'assistant', content: data.scene };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else {
+        const assistantMessage: Message = { 
+          role: mode === 'dm' ? 'assistant' : 'rules', 
+          content: mode === 'dm' ? data.response : data.answer 
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -48,30 +131,179 @@ export default function DMChat() {
     console.log('Speaking:', text);
   };
 
+  const resetCampaign = async () => {
+    try {
+      await fetch('http://localhost:3000/api/campaign/reset', { method: 'POST' });
+      setCampaign(null);
+      setMessages([]);
+    } catch (error) {
+      console.error('Error resetting campaign:', error);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-screen max-w-4xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4 text-center">Dungeon Master Chat</h1>
+    <div className="flex flex-col h-[calc(100vh-140px)] max-w-6xl mx-auto">
+      <div className="flex gap-2 mb-4 justify-between items-center">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setMode('dm')}
+            className={`px-6 py-2 rounded-lg font-medium transition-all ${
+              mode === 'dm' 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50' 
+                : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+            }`}
+          >
+            🎭 DM Mode
+          </button>
+          <button
+            onClick={() => setMode('rules')}
+            className={`px-6 py-2 rounded-lg font-medium transition-all ${
+              mode === 'rules' 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50' 
+                : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+            }`}
+          >
+            📜 Rules Mode
+          </button>
+        </div>
+        {mode === 'dm' && (
+          <div className="flex gap-2">
+            {!campaign ? (
+              <button
+                onClick={() => setShowCampaignModal(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-lg shadow-green-500/50 font-medium"
+              >
+                🎮 Start Campaign
+              </button>
+            ) : (
+              <>
+                <div className="px-4 py-2 bg-purple-600/30 border border-purple-500/30 rounded-lg text-white">
+                  {campaign.isComplete ? '🏆 Complete!' : `⚔️ ${campaign.name}`}
+                </div>
+                <button
+                  onClick={resetCampaign}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all shadow-lg shadow-red-500/50 font-medium"
+                >
+                  Reset
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {showCampaignModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-purple-500/30">
+            <h2 className="text-2xl font-bold text-white mb-4">🎮 Start New Campaign</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-300">Campaign Name</label>
+                <input
+                  type="text"
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  className="w-full p-2 border border-purple-500/30 rounded bg-slate-700/50 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="e.g., The Lost Mines of Phandelver"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-300">Description (optional)</label>
+                <textarea
+                  value={campaignDescription}
+                  onChange={(e) => setCampaignDescription(e.target.value)}
+                  className="w-full p-2 border border-purple-500/30 rounded bg-slate-700/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[80px]"
+                  placeholder="Describe your campaign setting..."
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => setShowCampaignModal(false)}
+                  className="px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={startCampaign}
+                  disabled={!campaignName.trim() || isLoading}
+                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-slate-600 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Starting...' : 'Start'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       <VoiceControls onTranscript={handleTranscript} onSpeak={handleSpeak} />
       
-      <div className="flex-1 overflow-y-auto border rounded-lg p-4 mb-4 bg-gray-50">
+      {campaign && (
+        <div className="bg-purple-600/20 border border-purple-500/30 rounded-lg p-4 mb-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-semibold text-white">📋 {campaign.name}</h3>
+              <p className="text-sm text-gray-400 mt-1">{campaign.description}</p>
+              <div className="mt-2">
+                <p className="text-sm text-gray-300">Objectives:</p>
+                <ul className="text-sm text-gray-400 list-disc list-inside">
+                  {campaign.objectives.map((obj, i) => (
+                    <li key={i} className={campaign.completedObjectives.includes(obj) ? 'line-through text-green-400' : ''}>
+                      {obj}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            {campaign.bossDefeated && (
+              <div className="text-4xl">🏆</div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      <div className="flex-1 overflow-y-auto border border-purple-500/30 rounded-lg p-4 mb-4 bg-slate-800/50 backdrop-blur-sm">
         {messages.length === 0 ? (
-          <p className="text-gray-500 text-center">Start a conversation with the Dungeon Master...</p>
+          <div className="text-center text-gray-400 py-8">
+            <span className="text-4xl mb-4 block">{mode === 'dm' ? '🐉' : '📚'}</span>
+            <p className="text-lg">
+              {mode === 'dm' 
+                ? campaign 
+                  ? 'Continue your adventure...' 
+                  : 'Begin your adventure with the Dungeon Master...' 
+                : 'Ask questions about D&D 5e rules...'}
+            </p>
+          </div>
         ) : (
           messages.map((msg, index) => (
             <div
               key={index}
-              className={`mb-4 p-3 rounded-lg ${
-                msg.role === 'user' ? 'bg-blue-100 ml-8' : 'bg-green-100 mr-8'
+              className={`mb-4 p-4 rounded-lg ${
+                msg.role === 'user' 
+                  ? 'bg-purple-600/30 ml-8 border border-purple-500/30' 
+                  : msg.role === 'rules'
+                  ? 'bg-blue-600/30 mr-8 border border-blue-500/30'
+                  : 'bg-green-600/30 mr-8 border border-green-500/30'
               }`}
             >
-              <strong>{msg.role === 'user' ? 'You' : 'DM'}:</strong>
-              <p className="mt-1">{msg.content}</p>
+              <strong className="text-white">
+                {msg.role === 'user' 
+                  ? '🧙 You' 
+                  : msg.role === 'rules'
+                  ? '📜 Rules Lawyer'
+                  : '🐉 DM'}:
+              </strong>
+              <p className="mt-2 text-gray-200 whitespace-pre-wrap">{msg.content}</p>
             </div>
           ))
         )}
         {isLoading && (
-          <div className="text-gray-500 text-center">DM is thinking...</div>
+          <div className="text-center text-gray-400 py-4">
+            <span className="text-2xl animate-pulse">{mode === 'dm' ? '🐉' : '📚'}</span>
+            <p className="mt-2">
+              {mode === 'dm' ? 'The Dungeon Master is contemplating...' : 'Consulting ancient tomes...'}
+            </p>
+          </div>
         )}
       </div>
 
@@ -81,14 +313,14 @@ export default function DMChat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder="Type your message..."
-          className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder={mode === 'dm' ? (campaign ? 'What do you do?' : 'Speak to the Dungeon Master...') : 'Ask about the rules...'}
+          className="flex-1 p-3 border border-purple-500/30 rounded-lg bg-slate-700/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
           disabled={isLoading}
         />
         <button
           onClick={() => sendMessage()}
           disabled={isLoading || !input.trim()}
-          className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-500/50 font-medium"
         >
           Send
         </button>
