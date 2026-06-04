@@ -37,8 +37,13 @@ router.post('/advance', async (req, res) => {
 });
 
 router.get('/status', (req, res) => {
-  const campaign = getCampaign();
-  res.json({ campaign, isActive: !!campaign });
+  try {
+    const campaign = getCampaign();
+    res.json({ campaign, isActive: !!campaign });
+  } catch (error) {
+    console.error('Campaign status error:', error);
+    res.status(500).json({ error: 'Failed to get campaign status' });
+  }
 });
 
 router.post('/objective', (req, res) => {
@@ -49,9 +54,13 @@ router.post('/objective', (req, res) => {
       return res.status(400).json({ error: 'Objective is required' });
     }
 
-    completeObjective(objective);
     const campaign = getCampaign();
-    res.json(campaign);
+    if (!campaign) {
+      return res.status(404).json({ error: 'No active campaign' });
+    }
+
+    completeObjective(objective);
+    res.json(getCampaign());
   } catch (error) {
     console.error('Objective completion error:', error);
     res.status(500).json({ error: 'Failed to complete objective' });
@@ -59,8 +68,13 @@ router.post('/objective', (req, res) => {
 });
 
 router.post('/reset', (req, res) => {
-  resetCampaign();
-  res.json({ message: 'Campaign reset' });
+  try {
+    resetCampaign();
+    res.json({ message: 'Campaign reset' });
+  } catch (error) {
+    console.error('Campaign reset error:', error);
+    res.status(500).json({ error: 'Failed to reset campaign' });
+  }
 });
 
 export default router;

@@ -4,8 +4,13 @@ import { generateResponse, checkOllamaConnection } from '../services/ollama';
 const router = Router();
 
 router.get('/health', async (req, res) => {
-  const isHealthy = await checkOllamaConnection();
-  res.json({ status: isHealthy ? 'connected' : 'disconnected' });
+  try {
+    const isHealthy = await checkOllamaConnection();
+    res.json({ status: isHealthy ? 'connected' : 'disconnected' });
+  } catch (error) {
+    console.error('Health check error:', error);
+    res.status(500).json({ status: 'disconnected', error: 'Health check failed' });
+  }
 });
 
 router.post('/chat', async (req, res) => {

@@ -12,7 +12,13 @@ export default function CampaignPlay() {
   useEffect(() => {
     const savedCampaign = localStorage.getItem('dnd-campaign');
     if (savedCampaign) {
-      setCampaign(JSON.parse(savedCampaign));
+      try {
+        setCampaign(JSON.parse(savedCampaign));
+      } catch (error) {
+        console.error('Failed to parse saved campaign:', error);
+        localStorage.removeItem('dnd-campaign');
+        navigate('/campaigns');
+      }
     } else {
       navigate('/campaigns');
     }
