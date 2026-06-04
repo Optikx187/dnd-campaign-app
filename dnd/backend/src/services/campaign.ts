@@ -18,10 +18,25 @@ When running a campaign:
 - Build tension toward climactic moments
 - Celebrate player victories and learn from defeats`;
 
+interface NPC {
+  name: string;
+  personality: string;
+  role: string;
+}
+
+interface CampaignOptions {
+  setting: string;
+  mission: string;
+  npcs: NPC[];
+}
+
 interface Campaign {
   id: string;
   name: string;
   description: string;
+  setting: string;
+  mission: string;
+  npcs: NPC[];
   currentScene: string;
   objectives: string[];
   completedObjectives: string[];
@@ -32,8 +47,13 @@ interface Campaign {
 
 let activeCampaign: Campaign | null = null;
 
-export async function startCampaign(campaignName: string, description: string): Promise<Campaign> {
-  const prompt = `${DM_PERSONALITY}\n\nCreate a D&D campaign with the following details:\nName: ${campaignName}\nDescription: ${description}\n\nProvide:\n1. An opening scene/hook\n2. Main objectives (3-5)\n3. The final boss\n4. Setting the scene for the first adventure`;
+export async function startCampaign(campaignName: string, description: string, options: CampaignOptions = { setting: '', mission: '', npcs: [] }): Promise<Campaign> {
+  const npcDescriptions = options.npcs
+    .filter((npc: NPC) => npc.name && npc.personality)
+    .map((npc: NPC) => `- ${npc.name} (${npc.role}): ${npc.personality}`)
+    .join('\n');
+
+  const prompt = `${DM_PERSONALITY}\n\nCreate a D&D campaign with the following details:\nName: ${campaignName}\nDescription: ${description}${options.setting ? `\nWorld Setting: ${options.setting}` : ''}${options.mission ? `\nMain Mission: ${options.mission}` : ''}${npcDescriptions ? `\nImportant NPCs:\n${npcDescriptions}` : ''}\n\nProvide:\n1. An opening scene/hook\n2. Main objectives (3-5)\n3. The final boss\n4. Setting the scene for the first adventure`;
   
   try {
     const response = await generateResponse(prompt, 'llama3');
@@ -42,6 +62,9 @@ export async function startCampaign(campaignName: string, description: string): 
       id: Date.now().toString(),
       name: campaignName,
       description,
+      setting: options.setting,
+      mission: options.mission,
+      npcs: options.npcs,
       currentScene: response,
       objectives: ['Explore the starting area', 'Gather information', 'Complete the main quest'],
       completedObjectives: [],

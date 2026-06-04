@@ -5,13 +5,17 @@ const router = Router();
 
 router.post('/start', async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, setting, mission, npcs } = req.body;
     
     if (!name) {
       return res.status(400).json({ error: 'Campaign name is required' });
     }
 
-    const campaign = await startCampaign(name, description || '');
+    const campaign = await startCampaign(name, description || '', {
+      setting: setting || '',
+      mission: mission || '',
+      npcs: npcs || [],
+    });
     res.json(campaign);
   } catch (error) {
     console.error('Campaign start error:', error);

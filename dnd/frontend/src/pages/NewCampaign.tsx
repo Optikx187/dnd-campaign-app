@@ -37,7 +37,7 @@ export default function NewCampaign() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/campaign/start', {
+      const response = await fetch('/api/campaign/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -53,7 +53,22 @@ export default function NewCampaign() {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('dnd-campaign', JSON.stringify(data.campaign));
+        const campaign = data.campaign || data;
+        localStorage.setItem('dnd-campaign', JSON.stringify(campaign));
+
+        // Also add to campaigns list for the "Continue Campaign" flow
+        const existingCampaigns = localStorage.getItem('dnd-campaigns');
+        let campaignsList = [];
+        if (existingCampaigns) {
+          try {
+            campaignsList = JSON.parse(existingCampaigns);
+          } catch {
+            campaignsList = [];
+          }
+        }
+        campaignsList.push(campaign);
+        localStorage.setItem('dnd-campaigns', JSON.stringify(campaignsList));
+
         navigate('/campaign/play');
       } else {
         alert('Failed to create campaign. Please try again.');
