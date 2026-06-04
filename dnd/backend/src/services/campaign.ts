@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { generateResponse } from './ollama';
 
 const DM_PERSONALITY = `You are an experienced and charismatic Dungeon Master for Dungeons & Dragons 5th Edition. Your personality traits:
@@ -39,7 +40,7 @@ export async function startCampaign(campaignName: string, description: string): 
     const response = await generateResponse(prompt, 'llama3');
     
     activeCampaign = {
-      id: Date.now().toString(),
+      id: randomUUID(),
       name: campaignName,
       description,
       currentScene: response,

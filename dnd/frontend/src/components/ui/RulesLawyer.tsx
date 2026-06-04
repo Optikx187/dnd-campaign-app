@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_BASE_URL } from '../../config';
 
 export default function RulesLawyer() {
   const [question, setQuestion] = useState('');
@@ -12,7 +13,7 @@ export default function RulesLawyer() {
     setAnswer('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/rules/ask', {
+      const response = await fetch(`${API_BASE_URL}/api/rules/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

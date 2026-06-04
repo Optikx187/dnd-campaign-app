@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_BASE_URL } from '../../config';
 
 interface LoginFormProps {
   onLogin: (username: string, password: string) => void;
@@ -23,7 +24,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
   const handleGoogleLogin = () => {
     // Redirect to Google OAuth
-    window.location.href = 'http://localhost:3000/api/auth/google';
+    window.location.href = `${API_BASE_URL}/api/auth/google`;
   };
 
   return (
