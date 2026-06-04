@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DMChat from '../components/ui/DMChat';
 import CharacterSheet from '../components/ui/CharacterSheet';
+import LoadingScreen from '../components/ui/LoadingScreen';
+import PageLayout from '../components/ui/PageLayout';
 
 export default function CampaignPlay() {
   const navigate = useNavigate();
@@ -25,15 +27,11 @@ export default function CampaignPlay() {
   };
 
   if (!campaign) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div className="text-white text-xl">Loading campaign...</div>
-      </div>
-    );
+    return <LoadingScreen message="Loading campaign..." />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex">
+    <PageLayout className="flex">
       {/* Sidebar - Roll20 style */}
       <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-slate-800/95 backdrop-blur-sm border-r border-purple-500/30 flex flex-col transition-all duration-300`}>
         <div className="p-4 border-b border-purple-500/30">
@@ -78,7 +76,7 @@ export default function CampaignPlay() {
                 : 'text-gray-400 hover:bg-slate-700/50 hover:text-white'
             }`}
           >
-            <span className="text-xl">�</span>
+            <span className="text-xl">📖</span>
             {sidebarOpen && <span>Rules</span>}
           </button>
         </nav>
@@ -138,6 +136,6 @@ export default function CampaignPlay() {
           )}
         </main>
       </div>
-    </div>
+    </PageLayout>
   );
 }

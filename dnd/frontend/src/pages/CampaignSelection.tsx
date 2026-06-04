@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PageLayout from '../components/ui/PageLayout';
 
 export default function CampaignSelection() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function CampaignSelection() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <PageLayout className="flex items-center justify-center">
       <div className="bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-2xl border border-purple-500/30 p-12 w-full max-w-2xl">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-white mb-4">🎲 Campaign Selection</h1>
@@ -61,6 +62,6 @@ export default function CampaignSelection() {
           </button>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }

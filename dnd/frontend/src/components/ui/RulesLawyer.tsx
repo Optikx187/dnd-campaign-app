@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { apiPost } from '../../lib/api';
 
 export default function RulesLawyer() {
   const [question, setQuestion] = useState('');
@@ -12,15 +13,7 @@ export default function RulesLawyer() {
     setAnswer('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/rules/ask', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ question }),
-      });
-
-      const data = await response.json();
+      const data = await apiPost<{ answer: string }>('/api/rules/ask', { question });
       setAnswer(data.answer);
     } catch (error) {
       console.error('Error asking rules lawyer:', error);

@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-interface Campaign {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-}
+import type { CampaignSummary } from '../types/campaign';
+import LoadingScreen from '../components/ui/LoadingScreen';
+import PageLayout from '../components/ui/PageLayout';
 
 export default function CampaignList() {
   const navigate = useNavigate();
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadCampaigns = async () => {
@@ -31,7 +27,7 @@ export default function CampaignList() {
     loadCampaigns();
   }, []);
 
-  const handleSelectCampaign = (campaign: Campaign) => {
+  const handleSelectCampaign = (campaign: CampaignSummary) => {
     localStorage.setItem('dnd-campaign', JSON.stringify(campaign));
     navigate('/campaign/play');
   };
@@ -45,15 +41,11 @@ export default function CampaignList() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div className="text-white text-xl">Loading campaigns...</div>
-      </div>
-    );
+    return <LoadingScreen message="Loading campaigns..." />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8 px-4">
+    <PageLayout className="py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">📚 Your Campaigns</h1>
@@ -123,6 +115,6 @@ export default function CampaignList() {
           </button>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }

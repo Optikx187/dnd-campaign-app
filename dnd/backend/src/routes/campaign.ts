@@ -1,62 +1,46 @@
 import { Router } from 'express';
 import { startCampaign, advanceCampaign, getCampaign, completeObjective, resetCampaign } from '../services/campaign';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { requireBody } from '../middleware/validate';
 
 const router = Router();
 
-router.post('/start', async (req, res) => {
-  try {
+router.post(
+  '/start',
+  requireBody('name'),
+  asyncHandler(async (req, res) => {
     const { name, description } = req.body;
-    
-    if (!name) {
-      return res.status(400).json({ error: 'Campaign name is required' });
-    }
-
     const campaign = await startCampaign(name, description || '');
     res.json(campaign);
-  } catch (error) {
-    console.error('Campaign start error:', error);
-    res.status(500).json({ error: 'Failed to start campaign' });
-  }
-});
+  }, 'Failed to start campaign')
+);
 
-router.post('/advance', async (req, res) => {
-  try {
+router.post(
+  '/advance',
+  requireBody('action'),
+  asyncHandler(async (req, res) => {
     const { action } = req.body;
-    
-    if (!action) {
-      return res.status(400).json({ error: 'Action is required' });
-    }
-
     const scene = await advanceCampaign(action);
     const campaign = getCampaign();
     res.json({ scene, campaign });
-  } catch (error) {
-    console.error('Campaign advance error:', error);
-    res.status(500).json({ error: 'Failed to advance campaign' });
-  }
-});
+  }, 'Failed to advance campaign')
+);
 
 router.get('/status', (req, res) => {
   const campaign = getCampaign();
   res.json({ campaign, isActive: !!campaign });
 });
 
-router.post('/objective', (req, res) => {
-  try {
+router.post(
+  '/objective',
+  requireBody('objective'),
+  asyncHandler(async (req, res) => {
     const { objective } = req.body;
-    
-    if (!objective) {
-      return res.status(400).json({ error: 'Objective is required' });
-    }
-
     completeObjective(objective);
     const campaign = getCampaign();
     res.json(campaign);
-  } catch (error) {
-    console.error('Objective completion error:', error);
-    res.status(500).json({ error: 'Failed to complete objective' });
-  }
-});
+  }, 'Failed to complete objective')
+);
 
 router.post('/reset', (req, res) => {
   resetCampaign();

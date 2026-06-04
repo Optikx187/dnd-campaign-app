@@ -1,20 +1,11 @@
 import { useState, useEffect } from 'react';
 import VoiceControls from './VoiceControls';
+import { apiPost, apiGet } from '../../lib/api';
+import type { Campaign } from '../../types/campaign';
 
 interface Message {
   role: 'user' | 'assistant' | 'rules';
   content: string;
-}
-
-interface Campaign {
-  id: string;
-  name: string;
-  description: string;
-  currentScene: string;
-  objectives: string[];
-  completedObjectives: string[];
-  isComplete: boolean;
-  bossDefeated: boolean;
 }
 
 export default function DMChat() {
@@ -36,8 +27,7 @@ export default function DMChat() {
       }
 
       // Then check backend for current campaign
-      const response = await fetch('http://localhost:3000/api/campaign/status');
-      const data = await response.json();
+      const data = await apiGet<{ isActive: boolean; campaign: Campaign | null }>('/api/campaign/status');
       if (data.isActive && data.campaign) {
         setCampaign(data.campaign);
         localStorage.setItem('dnd-campaign', JSON.stringify(data.campaign));
@@ -68,15 +58,10 @@ export default function DMChat() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/api/campaign/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: campaignName, description: campaignDescription }),
+      const data = await apiPost<Campaign>('/api/campaign/start', {
+        name: campaignName,
+        description: campaignDescription,
       });
-
-      const data = await response.json();
       setCampaign(data);
       setShowCampaignModal(false);
       
@@ -101,7 +86,7 @@ export default function DMChat() {
 
     try {
       let endpoint = mode === 'dm' ? '/api/ai/chat' : '/api/rules/ask';
-      let body: any = mode === 'dm' 
+      let body: Record<string, unknown> = mode === 'dm' 
         ? { prompt: messageToSend, model: 'llama3' }
         : { question: messageToSend };
 
@@ -111,31 +96,24 @@ export default function DMChat() {
         body = { action: messageToSend };
       }
 
-      const response = await fetch(`http://localhost:3000${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      const data = await response.json();
+      const data = await apiPost<Record<string, unknown>>(endpoint, body);
 
       if (mode === 'dm' && campaign) {
         // Update campaign state
         if (data.campaign) {
-          setCampaign(data.campaign);
+          setCampaign(data.campaign as Campaign);
         }
-        const assistantMessage: Message = { role: 'assistant', content: data.scene };
+        const assistantMessage: Message = { role: 'assistant', content: data.scene as string };
         setMessages((prev) => [...prev, assistantMessage]);
-        speakMessage(data.scene);
+        speakMessage(data.scene as string);
       } else {
+        const content = (mode === 'dm' ? data.response : data.answer) as string;
         const assistantMessage: Message = {
           role: mode === 'dm' ? 'assistant' : 'rules',
-          content: mode === 'dm' ? data.response : data.answer
+          content,
         };
         setMessages((prev) => [...prev, assistantMessage]);
-        speakMessage(mode === 'dm' ? data.response : data.answer);
+        speakMessage(content);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -163,7 +141,7 @@ export default function DMChat() {
 
   const resetCampaign = async () => {
     try {
-      await fetch('http://localhost:3000/api/campaign/reset', { method: 'POST' });
+      await apiPost('/api/campaign/reset', {});
       setCampaign(null);
       setMessages([]);
     } catch (error) {
