@@ -16,7 +16,7 @@ export default function CampaignSelection() {
       <div className="bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-2xl border border-purple-500/30 p-12 w-full max-w-2xl">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-white mb-4">🎲 Campaign Selection</h1>
-          <p className="text-gray-400 text-lg">Choose your adventure</p>
+          <p className="text-gray-400 text-lg">D&D Companion - Choose your adventure</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

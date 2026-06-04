@@ -11,6 +11,119 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0
     restart: unless-stopped
+    # Pull llama3 model on startup
+    entrypoint: ["/bin/sh", "-c", "ollama serve & ollama pull llama3 && tail -f /dev/null"]
+
+  npc-service:
+    build:
+      context: ./services/npc-service
+      dockerfile: Dockerfile
+    container_name: dnd-npc-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NPC_MODEL=llama3
+      - NPC_API_URL=http://ollama:11434
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/npc/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  dm-service:
+    build:
+      context: ./services/dm-service
+      dockerfile: Dockerfile
+    container_name: dnd-dm-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - DM_MODEL=llama3
+      - DM_API_URL=http://ollama:11434
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/api/dm/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  tts-service:
+    build:
+      context: ./services/tts-service
+      dockerfile: Dockerfile
+    container_name: dnd-tts-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - TTS_PROVIDER=webspeech
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3003/api/tts/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  memory-service:
+    build:
+      context: ./services/memory-service
+      dockerfile: Dockerfile
+    container_name: dnd-memory-service
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+    depends_on:
+      - chromadb
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/api/memory/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  orchestrator:
+    build:
+      context: ./services/orchestrator
+      dockerfile: Dockerfile
+    container_name: dnd-orchestrator
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NPC_SERVICE_URL=http://npc-service:3001
+      - DM_SERVICE_URL=http://dm-service:3002
+      - TTS_SERVICE_URL=http://tts-service:3003
+      - MEMORY_SERVICE_URL=http://memory-service:3004
+    depends_on:
+      - npc-service
+      - dm-service
+      - tts-service
+      - memory-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/orchestrate/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: dnd-chromadb
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    restart: unless-stopped
 
   backend:
     build:
@@ -18,7 +131,7 @@ services:
       dockerfile: Dockerfile
     container_name: dnd-backend
     ports:
-      - "3000:3000"
+      - "5000:3000"
     environment:
       - PORT=3000
       - OLLAMA_URL=http://ollama:11434
@@ -56,3 +169,4 @@ services:
 volumes:
   ollama_data:
   postgres_data:
+  chroma_data:

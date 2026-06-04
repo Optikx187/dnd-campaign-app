@@ -1,4 +1,4 @@
-# D&D Campaign Application
+# D&D Companion
 
 A web-based Dungeons & Dragons companion application with AI-powered DM, rules lawyer, campaign system, and character management using local LLM.
 
