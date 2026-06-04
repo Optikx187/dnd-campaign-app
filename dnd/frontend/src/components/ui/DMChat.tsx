@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import VoiceControls from './VoiceControls';
+import { API_BASE_URL } from '../../config';
 
 interface Message {
   role: 'user' | 'assistant' | 'rules';
@@ -36,7 +37,7 @@ export default function DMChat() {
       }
 
       // Then check backend for current campaign
-      const response = await fetch('http://localhost:3000/api/campaign/status');
+      const response = await fetch(`${API_BASE_URL}/api/campaign/status`);
       const data = await response.json();
       if (data.isActive && data.campaign) {
         setCampaign(data.campaign);
@@ -68,7 +69,7 @@ export default function DMChat() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/api/campaign/start', {
+      const response = await fetch(`${API_BASE_URL}/api/campaign/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +103,7 @@ export default function DMChat() {
     try {
       if (mode === 'dm' && campaign) {
         // Use orchestrator for DM responses with campaign context
-        const response = await fetch('http://localhost:3000/api/orchestrate/dm', {
+        const response = await fetch(`${API_BASE_URL}/api/orchestrate/dm`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -122,7 +123,7 @@ export default function DMChat() {
         speakMessage(data.dmResponse);
       } else if (mode === 'dm') {
         // Use orchestrator for DM responses without campaign
-        const response = await fetch('http://localhost:3000/api/orchestrate/dm', {
+        const response = await fetch(`${API_BASE_URL}/api/orchestrate/dm`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -142,7 +143,7 @@ export default function DMChat() {
         speakMessage(data.dmResponse);
       } else {
         // Rules mode - keep using backend directly for now
-        const response = await fetch('http://localhost:3000/api/rules/ask', {
+        const response = await fetch(`${API_BASE_URL}/api/rules/ask`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -184,7 +185,7 @@ export default function DMChat() {
 
   const resetCampaign = async () => {
     try {
-      await fetch('http://localhost:3000/api/campaign/reset', { method: 'POST' });
+      await fetch(`${API_BASE_URL}/api/campaign/reset`, { method: 'POST' });
       setCampaign(null);
       setMessages([]);
     } catch (error) {

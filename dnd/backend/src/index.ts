@@ -13,10 +13,18 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.json());
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',')
+  : ['http://localhost:80', 'http://localhost:5173'];
+
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+}));
+app.use(express.json({ limit: '1mb' }));
 // app.use(session({
-//   secret: process.env.SESSION_SECRET || 'dnd-campaign-secret',
+//   secret: process.env.SESSION_SECRET ?? (() => { throw new Error('SESSION_SECRET env var is required'); })(),
 //   resave: false,
 //   saveUninitialized: false,
 // }));
