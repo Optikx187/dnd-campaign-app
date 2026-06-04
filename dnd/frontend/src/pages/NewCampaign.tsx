@@ -15,6 +15,7 @@ export default function NewCampaign() {
   const [mission, setMission] = useState('');
   const [npcs, setNpcs] = useState<NPC[]>([{ name: '', personality: '', role: '' }]);
   const [isLoading, setIsLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const addNPC = () => {
     setNpcs([...npcs, { name: '', personality: '', role: '' }]);
@@ -35,6 +36,7 @@ export default function NewCampaign() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setCreateError(null);
 
     try {
       const response = await fetch('http://localhost:3000/api/campaign/start', {
@@ -51,16 +53,17 @@ export default function NewCampaign() {
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('dnd-campaign', JSON.stringify(data.campaign));
-        navigate('/campaign/play');
-      } else {
-        alert('Failed to create campaign. Please try again.');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.error || `Server error: ${response.status}`);
       }
+
+      const data = await response.json();
+      localStorage.setItem('dnd-campaign', JSON.stringify(data.campaign));
+      navigate('/campaign/play');
     } catch (error) {
       console.error('Error creating campaign:', error);
-      alert('Failed to create campaign. Please try again.');
+      setCreateError(error instanceof Error ? error.message : 'Failed to create campaign. Is the backend running?');
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +76,12 @@ export default function NewCampaign() {
           <h1 className="text-4xl font-bold text-white mb-2">🎮 Create New Campaign</h1>
           <p className="text-gray-400">Set up your adventure</p>
         </div>
+
+        {createError && (
+          <div className="bg-red-600/20 border border-red-500/30 rounded-lg p-3 mb-6">
+            <p className="text-red-300 text-sm">{createError}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Campaign Name */}

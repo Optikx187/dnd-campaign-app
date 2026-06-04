@@ -20,11 +20,20 @@ export default function RulesLawyer() {
         body: JSON.stringify({ question }),
       });
 
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.error || `Server error: ${response.status}`);
+      }
+
       const data = await response.json();
+      if (!data.answer) {
+        throw new Error('Received empty answer from server');
+      }
       setAnswer(data.answer);
     } catch (error) {
       console.error('Error asking rules lawyer:', error);
-      setAnswer('Failed to get an answer. Please try again.');
+      const detail = error instanceof Error ? error.message : 'Unknown error';
+      setAnswer(`Failed to get an answer: ${detail}. Please try again.`);
     } finally {
       setIsLoading(false);
     }

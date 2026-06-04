@@ -26,17 +26,23 @@ export default function DMChat() {
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [campaignName, setCampaignName] = useState('');
   const [campaignDescription, setCampaignDescription] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const checkCampaignStatus = async () => {
     try {
-      // First check localStorage for persisted campaign
       const savedCampaign = localStorage.getItem('dnd-campaign');
       if (savedCampaign) {
-        setCampaign(JSON.parse(savedCampaign));
+        try {
+          setCampaign(JSON.parse(savedCampaign));
+        } catch {
+          localStorage.removeItem('dnd-campaign');
+        }
       }
 
-      // Then check backend for current campaign
       const response = await fetch('http://localhost:3000/api/campaign/status');
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
       const data = await response.json();
       if (data.isActive && data.campaign) {
         setCampaign(data.campaign);
@@ -67,6 +73,7 @@ export default function DMChat() {
     if (!campaignName.trim()) return;
 
     setIsLoading(true);
+    setError(null);
     try {
       const response = await fetch('http://localhost:3000/api/campaign/start', {
         method: 'POST',
@@ -76,15 +83,20 @@ export default function DMChat() {
         body: JSON.stringify({ name: campaignName, description: campaignDescription }),
       });
 
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.error || `Server error: ${response.status}`);
+      }
+
       const data = await response.json();
       setCampaign(data);
       setShowCampaignModal(false);
       
-      // Add the opening scene as a DM message
       const dmMessage: Message = { role: 'assistant', content: data.currentScene };
       setMessages([dmMessage]);
     } catch (error) {
       console.error('Error starting campaign:', error);
+      setError(error instanceof Error ? error.message : 'Failed to start campaign. Is the backend running?');
     } finally {
       setIsLoading(false);
     }
@@ -99,6 +111,7 @@ export default function DMChat() {
     setInput('');
     setIsLoading(true);
 
+    setError(null);
     try {
       let endpoint = mode === 'dm' ? '/api/ai/chat' : '/api/rules/ask';
       let body: any = mode === 'dm' 
@@ -119,26 +132,41 @@ export default function DMChat() {
         body: JSON.stringify(body),
       });
 
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.error || `Server error: ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (mode === 'dm' && campaign) {
-        // Update campaign state
         if (data.campaign) {
           setCampaign(data.campaign);
         }
-        const assistantMessage: Message = { role: 'assistant', content: data.scene };
+        const content = data.scene || data.response;
+        if (!content) {
+          throw new Error('Received empty response from server');
+        }
+        const assistantMessage: Message = { role: 'assistant', content };
         setMessages((prev) => [...prev, assistantMessage]);
-        speakMessage(data.scene);
+        speakMessage(content);
       } else {
+        const content = mode === 'dm' ? data.response : data.answer;
+        if (!content) {
+          throw new Error('Received empty response from server');
+        }
         const assistantMessage: Message = {
           role: mode === 'dm' ? 'assistant' : 'rules',
-          content: mode === 'dm' ? data.response : data.answer
+          content
         };
         setMessages((prev) => [...prev, assistantMessage]);
-        speakMessage(mode === 'dm' ? data.response : data.answer);
+        speakMessage(content);
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      const errorContent = error instanceof Error ? error.message : 'Failed to get response. Is the backend running?';
+      const errorMessage: Message = { role: 'assistant', content: `Error: ${errorContent}` };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -163,16 +191,29 @@ export default function DMChat() {
 
   const resetCampaign = async () => {
     try {
-      await fetch('http://localhost:3000/api/campaign/reset', { method: 'POST' });
+      const response = await fetch('http://localhost:3000/api/campaign/reset', { method: 'POST' });
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
       setCampaign(null);
       setMessages([]);
+      setError(null);
     } catch (error) {
       console.error('Error resetting campaign:', error);
+      setError(error instanceof Error ? error.message : 'Failed to reset campaign');
     }
   };
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] max-w-6xl mx-auto">
+      {error && (
+        <div className="bg-red-600/20 border border-red-500/30 rounded-lg p-3 mb-4 flex justify-between items-center">
+          <span className="text-red-300 text-sm">{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300 ml-4">
+            &times;
+          </button>
+        </div>
+      )}
       <div className="flex gap-2 mb-4 justify-between items-center">
         <div className="flex gap-2">
           <button

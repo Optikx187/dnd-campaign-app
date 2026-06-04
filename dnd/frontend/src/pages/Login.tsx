@@ -6,10 +6,12 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoginError(null);
     
     try {
       const response = await fetch('http://localhost:3000/api/auth/login', {
@@ -20,16 +22,17 @@ export default function Login() {
         body: JSON.stringify({ username, password }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/campaigns');
-      } else {
-        alert('Login failed. Please try again.');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.error || `Login failed (${response.status})`);
       }
+
+      const data = await response.json();
+      localStorage.setItem('user', JSON.stringify(data.user));
+      navigate('/campaigns');
     } catch (error) {
       console.error('Login error:', error);
-      alert('Login failed. Please try again.');
+      setLoginError(error instanceof Error ? error.message : 'Login failed. Is the backend running?');
     } finally {
       setIsLoading(false);
     }
@@ -47,6 +50,12 @@ export default function Login() {
           <h1 className="text-4xl font-bold text-white mb-2">🎲 D&D Campaign Manager</h1>
           <p className="text-gray-400">Log in to manage your campaigns</p>
         </div>
+
+        {loginError && (
+          <div className="bg-red-600/20 border border-red-500/30 rounded-lg p-3 mb-4">
+            <p className="text-red-300 text-sm">{loginError}</p>
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>

@@ -12,16 +12,22 @@ export default function CampaignList() {
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadCampaigns = async () => {
     try {
-      // For now, load from localStorage. In production, this would come from the database
       const savedCampaigns = localStorage.getItem('dnd-campaigns');
       if (savedCampaigns) {
-        setCampaigns(JSON.parse(savedCampaigns));
+        try {
+          setCampaigns(JSON.parse(savedCampaigns));
+        } catch {
+          localStorage.removeItem('dnd-campaigns');
+          setLoadError('Saved campaign data was corrupted and has been cleared.');
+        }
       }
     } catch (error) {
       console.error('Error loading campaigns:', error);
+      setLoadError('Failed to load campaigns.');
     } finally {
       setIsLoading(false);
     }
@@ -59,6 +65,12 @@ export default function CampaignList() {
           <h1 className="text-4xl font-bold text-white mb-2">📚 Your Campaigns</h1>
           <p className="text-gray-400">Select a campaign to continue</p>
         </div>
+
+        {loadError && (
+          <div className="bg-red-600/20 border border-red-500/30 rounded-lg p-3 mb-6">
+            <p className="text-red-300 text-sm">{loadError}</p>
+          </div>
+        )}
 
         {campaigns.length === 0 ? (
           <div className="bg-slate-800/90 backdrop-blur-sm rounded-xl border border-purple-500/30 p-12 text-center">

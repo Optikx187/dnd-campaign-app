@@ -19,7 +19,7 @@ export async function askRulesLawyer(question: string): Promise<string> {
     return response;
   } catch (error) {
     console.error('Error asking rules lawyer:', error);
-    throw new Error('Failed to get rules advice');
+    throw new Error('Failed to get rules advice', { cause: error });
   }
 }
 
@@ -45,6 +45,6 @@ export async function checkRule(ruleQuery: string): Promise<{
     };
   } catch (error) {
     console.error('Error checking rule:', error);
-    throw new Error('Failed to check rule');
+    throw new Error('Failed to check rule', { cause: error });
   }
 }

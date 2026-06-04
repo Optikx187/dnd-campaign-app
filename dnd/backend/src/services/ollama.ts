@@ -27,7 +27,7 @@ export async function generateResponse(
       throw new Error(`Ollama API error: ${response.statusText}`);
     }
 
-    const data: OllamaResponse = await response.json();
+    const data = await response.json() as OllamaResponse;
     return data.response;
   } catch (error) {
     console.error('Error calling Ollama:', error);

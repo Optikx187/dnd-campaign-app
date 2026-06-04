@@ -53,7 +53,7 @@ export async function startCampaign(campaignName: string, description: string): 
     return activeCampaign;
   } catch (error) {
     console.error('Error starting campaign:', error);
-    throw new Error('Failed to start campaign');
+    throw new Error('Failed to start campaign', { cause: error });
   }
 }
 
@@ -80,7 +80,7 @@ export async function advanceCampaign(playerAction: string): Promise<string> {
     return response;
   } catch (error) {
     console.error('Error advancing campaign:', error);
-    throw new Error('Failed to advance campaign');
+    throw new Error('Failed to advance campaign', { cause: error });
   }
 }
 
@@ -89,7 +89,11 @@ export function getCampaign(): Campaign | null {
 }
 
 export function completeObjective(objective: string): void {
-  if (activeCampaign && !activeCampaign.completedObjectives.includes(objective)) {
+  if (!activeCampaign) {
+    throw new Error('No active campaign');
+  }
+
+  if (!activeCampaign.completedObjectives.includes(objective)) {
     activeCampaign.completedObjectives.push(objective);
     
     // Check if all objectives are complete
