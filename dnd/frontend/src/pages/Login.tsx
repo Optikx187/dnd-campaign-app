@@ -44,7 +44,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-2xl border border-purple-500/30 p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">🎲 D&D Campaign Manager</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">🎲 D&D Companion</h1>
           <p className="text-gray-400">Log in to manage your campaigns</p>
         </div>
 

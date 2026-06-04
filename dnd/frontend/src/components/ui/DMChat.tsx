@@ -100,42 +100,63 @@ export default function DMChat() {
     setIsLoading(true);
 
     try {
-      let endpoint = mode === 'dm' ? '/api/ai/chat' : '/api/rules/ask';
-      let body: any = mode === 'dm' 
-        ? { prompt: messageToSend, model: 'llama3' }
-        : { question: messageToSend };
-
-      // If in campaign mode, use campaign advance instead
-      if (mode === 'dm' && campaign && !campaign.isComplete) {
-        endpoint = '/api/campaign/advance';
-        body = { action: messageToSend };
-      }
-
-      const response = await fetch(`http://localhost:3000${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      const data = await response.json();
-
       if (mode === 'dm' && campaign) {
-        // Update campaign state
-        if (data.campaign) {
-          setCampaign(data.campaign);
-        }
-        const assistantMessage: Message = { role: 'assistant', content: data.scene };
+        // Use orchestrator for DM responses with campaign context
+        const response = await fetch('http://localhost:3000/api/orchestrate/dm', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            campaignId: campaign.id,
+            playerMessage: messageToSend,
+            campaignContext: campaign.description,
+            campaignHistory: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+            npcs: [],
+          }),
+        });
+
+        const data = await response.json();
+        const assistantMessage: Message = { role: 'assistant', content: data.dmResponse };
         setMessages((prev) => [...prev, assistantMessage]);
-        speakMessage(data.scene);
+        speakMessage(data.dmResponse);
+      } else if (mode === 'dm') {
+        // Use orchestrator for DM responses without campaign
+        const response = await fetch('http://localhost:3000/api/orchestrate/dm', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            campaignId: 'default',
+            playerMessage: messageToSend,
+            campaignContext: 'No active campaign',
+            campaignHistory: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+            npcs: [],
+          }),
+        });
+
+        const data = await response.json();
+        const assistantMessage: Message = { role: 'assistant', content: data.dmResponse };
+        setMessages((prev) => [...prev, assistantMessage]);
+        speakMessage(data.dmResponse);
       } else {
+        // Rules mode - keep using backend directly for now
+        const response = await fetch('http://localhost:3000/api/rules/ask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ question: messageToSend }),
+        });
+
+        const data = await response.json();
         const assistantMessage: Message = {
-          role: mode === 'dm' ? 'assistant' : 'rules',
-          content: mode === 'dm' ? data.response : data.answer
+          role: 'rules',
+          content: data.answer
         };
         setMessages((prev) => [...prev, assistantMessage]);
-        speakMessage(mode === 'dm' ? data.response : data.answer);
+        speakMessage(data.answer);
       }
     } catch (error) {
       console.error('Error sending message:', error);

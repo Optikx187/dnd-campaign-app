@@ -37,7 +37,7 @@ export default function NewCampaign() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/campaign/start', {
+      const response = await fetch('http://localhost:3000/api/orchestrate/campaign', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
