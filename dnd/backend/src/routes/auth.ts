@@ -1,64 +1,14 @@
 import { Router } from 'express';
-// import passport from 'passport';
-// import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { requireBody } from '../middleware/validate';
 
 const router = Router();
 
-// Google OAuth Strategy - Temporarily disabled due to module resolution issues
-// passport.use(
-//   new GoogleStrategy(
-//     {
-//       clientID: process.env.GOOGLE_CLIENT_ID || '',
-//       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-//       callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/api/auth/google/callback',
-//     },
-//     async (accessToken: any, refreshToken: any, profile: any, done: any) => {
-//       try {
-//         // In production, save/find user in database
-//         const user = {
-//           id: profile.id,
-//           username: profile.displayName,
-//           email: profile.emails?.[0]?.value || null,
-//           googleId: profile.id,
-//           createdAt: new Date().toISOString(),
-//         };
-//         return done(null, user);
-//       } catch (error) {
-//         return done(error as Error, undefined);
-//       }
-//     }
-//   )
-// );
-
-// passport.serializeUser((user: any, done: any) => {
-//   done(null, user);
-// });
-
-// passport.deserializeUser((user: any, done: any) => {
-//   done(null, user);
-// });
-
-// Google OAuth Routes - Temporarily disabled
-// router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-// router.get(
-//   '/google/callback',
-//   passport.authenticate('google', { failureRedirect: '/login' }),
-//   (req: any, res) => {
-//     // Successful authentication
-//     const user = req.user as any;
-//     res.json({ user, message: 'Google login successful' });
-//   }
-// );
-
-// Simple demo authentication - in production, use proper password hashing and JWT
-router.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
-    }
+router.post(
+  '/login',
+  requireBody('username', 'password'),
+  asyncHandler(async (req, res) => {
+    const { username } = req.body;
 
     // Demo: Accept any username/password for now
     // In production, verify against database with bcrypt
@@ -69,19 +19,14 @@ router.post('/login', async (req, res) => {
     };
 
     res.json({ user, message: 'Login successful' });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
-  }
-});
+  }, 'Login failed')
+);
 
-router.post('/register', async (req, res) => {
-  try {
-    const { username, password, email } = req.body;
-    
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
-    }
+router.post(
+  '/register',
+  requireBody('username', 'password'),
+  asyncHandler(async (req, res) => {
+    const { username, email } = req.body;
 
     // Demo: Create user without database
     // In production, save to database with bcrypt
@@ -93,10 +38,7 @@ router.post('/register', async (req, res) => {
     };
 
     res.json({ user, message: 'Registration successful' });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Registration failed' });
-  }
-});
+  }, 'Registration failed')
+);
 
 export default router;

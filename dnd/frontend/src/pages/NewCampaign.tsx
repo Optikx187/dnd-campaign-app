@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiPost } from '../lib/api';
+import PageLayout from '../components/ui/PageLayout';
 
 interface NPC {
   name: string;
@@ -37,27 +39,16 @@ export default function NewCampaign() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/campaign/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: campaignName,
-          description,
-          setting,
-          mission,
-          npcs: npcs.filter(npc => npc.name && npc.personality),
-        }),
+      const data = await apiPost<{ campaign: unknown }>('/api/campaign/start', {
+        name: campaignName,
+        description,
+        setting,
+        mission,
+        npcs: npcs.filter(npc => npc.name && npc.personality),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('dnd-campaign', JSON.stringify(data.campaign));
-        navigate('/campaign/play');
-      } else {
-        alert('Failed to create campaign. Please try again.');
-      }
+      localStorage.setItem('dnd-campaign', JSON.stringify(data.campaign));
+      navigate('/campaign/play');
     } catch (error) {
       console.error('Error creating campaign:', error);
       alert('Failed to create campaign. Please try again.');
@@ -67,7 +58,7 @@ export default function NewCampaign() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8 px-4">
+    <PageLayout className="py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">🎮 Create New Campaign</h1>
@@ -221,6 +212,6 @@ export default function NewCampaign() {
           </div>
         </form>
       </div>
-    </div>
+    </PageLayout>
   );
 }
