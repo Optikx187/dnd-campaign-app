@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-interface CharacterStats {
+export interface CharacterStats {
   strength: number;
   dexterity: number;
   constitution: number;
@@ -18,16 +18,21 @@ interface Character {
 }
 
 // D&D 5e Ability Score Improvement (ASI) levels
-const ASI_LEVELS = [4, 8, 12, 16, 19];
+export const ASI_LEVELS = [4, 8, 12, 16, 19];
 
 // Calculate available ASI points based on level
-const getAvailableASI = (level: number) => {
+export const getAvailableASI = (level: number) => {
   return ASI_LEVELS.filter(l => l <= level).length;
 };
 
 // Calculate total stat points spent (above base 10)
-const getStatPointsSpent = (stats: CharacterStats) => {
+export const getStatPointsSpent = (stats: CharacterStats) => {
   return Object.values(stats).reduce((total, stat) => total + Math.max(0, stat - 10), 0);
+};
+
+// Calculate ability score modifier
+export const getModifier = (stat: number) => {
+  return Math.floor((stat - 10) / 2);
 };
 
 export default function CharacterSheet() {
@@ -70,10 +75,6 @@ export default function CharacterSheet() {
         [stat]: newValue,
       },
     });
-  };
-
-  const getModifier = (stat: number) => {
-    return Math.floor((stat - 10) / 2);
   };
 
   const saveCharacter = () => {
