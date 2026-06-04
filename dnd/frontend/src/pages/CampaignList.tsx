@@ -12,16 +12,17 @@ export default function CampaignList() {
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const loadCampaigns = async () => {
+  const loadCampaigns = () => {
     try {
-      // For now, load from localStorage. In production, this would come from the database
       const savedCampaigns = localStorage.getItem('dnd-campaigns');
       if (savedCampaigns) {
         setCampaigns(JSON.parse(savedCampaigns));
       }
     } catch (error) {
       console.error('Error loading campaigns:', error);
+      localStorage.removeItem('dnd-campaigns');
     } finally {
       setIsLoading(false);
     }
@@ -37,10 +38,15 @@ export default function CampaignList() {
   };
 
   const handleDeleteCampaign = (campaignId: string) => {
-    if (confirm('Are you sure you want to delete this campaign?')) {
-      const updatedCampaigns = campaigns.filter(c => c.id !== campaignId);
+    setDeletingId(campaignId);
+  };
+
+  const confirmDelete = () => {
+    if (deletingId) {
+      const updatedCampaigns = campaigns.filter(c => c.id !== deletingId);
       setCampaigns(updatedCampaigns);
       localStorage.setItem('dnd-campaigns', JSON.stringify(updatedCampaigns));
+      setDeletingId(null);
     }
   };
 
@@ -105,6 +111,29 @@ export default function CampaignList() {
                 </button>
               </div>
             ))}
+          </div>
+        )}
+
+        {deletingId && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+            <div className="bg-slate-800 border border-purple-500/30 rounded-xl p-6 max-w-sm mx-4">
+              <h3 className="text-lg font-bold text-white mb-2">Delete Campaign?</h3>
+              <p className="text-gray-400 mb-6">This action cannot be undone.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeletingId(null)}
+                  className="flex-1 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all font-medium"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

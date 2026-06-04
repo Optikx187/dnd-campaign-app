@@ -12,7 +12,7 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +114,10 @@ export default function Login() {
 
         <p className="mt-6 text-center text-sm text-gray-400">
           Don't have an account?{' '}
-          <button className="text-purple-400 hover:text-purple-300 font-medium">
+          <button
+            onClick={() => navigate('/register')}
+            className="text-purple-400 hover:text-purple-300 font-medium"
+          >
             Sign up
           </button>
         </p>

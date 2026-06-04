@@ -12,7 +12,12 @@ export default function CampaignPlay() {
   useEffect(() => {
     const savedCampaign = localStorage.getItem('dnd-campaign');
     if (savedCampaign) {
-      setCampaign(JSON.parse(savedCampaign));
+      try {
+        setCampaign(JSON.parse(savedCampaign));
+      } catch {
+        localStorage.removeItem('dnd-campaign');
+        navigate('/campaigns');
+      }
     } else {
       navigate('/campaigns');
     }
@@ -39,9 +44,11 @@ export default function CampaignPlay() {
         <div className="p-4 border-b border-purple-500/30">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+            aria-expanded={sidebarOpen}
             className="text-white hover:text-purple-400 transition-colors"
           >
-            {sidebarOpen ? '☰' : '☰'}
+            {sidebarOpen ? '✕' : '☰'}
           </button>
         </div>
 
@@ -78,7 +85,7 @@ export default function CampaignPlay() {
                 : 'text-gray-400 hover:bg-slate-700/50 hover:text-white'
             }`}
           >
-            <span className="text-xl">�</span>
+            <span className="text-xl">📖</span>
             {sidebarOpen && <span>Rules</span>}
           </button>
         </nav>
@@ -117,7 +124,8 @@ export default function CampaignPlay() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <div className="bg-slate-700/50 px-3 py-1 rounded-full text-sm text-gray-300">
+              <div className="bg-green-700/50 px-3 py-1 rounded-full text-sm text-green-300 flex items-center gap-1">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                 Session Active
               </div>
             </div>

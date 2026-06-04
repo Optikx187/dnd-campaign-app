@@ -1,22 +1,15 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function CampaignSelection() {
   const navigate = useNavigate();
-  const [showNewCampaign, setShowNewCampaign] = useState(false);
 
   const handleStartNew = () => {
-    setShowNewCampaign(true);
+    navigate('/campaigns/new');
   };
 
   const handleContinue = () => {
     navigate('/campaigns/list');
   };
-
-  if (showNewCampaign) {
-    navigate('/campaigns/new');
-    return null;
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
